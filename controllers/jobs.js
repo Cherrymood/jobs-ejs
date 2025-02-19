@@ -44,6 +44,8 @@ export async function editJobs(req, res) {
 }
 // GET a specific jobs for editing
 export async function getEditJob(req, res) {
+  // console.log("Job ID getEditJob:", req.params.id); // Debugging line
+  // console.log("Body getEditJob", req.body);
   try {
     const job = await Job.findById(req.params.id);
     if (job) {
@@ -60,10 +62,17 @@ export async function getEditJob(req, res) {
 
 // POST an updated jobs
 export async function updateJobs(req, res, next) {
-  console.log("Job ID:", req.params.id); // Debugging line
+  // const {
+  //   user: { id: createdBy },
+  //   params: { id: jobId },
+  //   body: { company, position },
+  // } = req;
+
+  // console.log("Job ID: updateJobs", req.params.id); // Debugging line
+  // console.log("Body updateJobs", req.body);
   try {
     const updatedJobs = await Job.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user._id },
+      { _id: req.params.id },
       req.body,
       { new: true, runValidators: true }
     );

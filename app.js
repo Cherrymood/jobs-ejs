@@ -8,7 +8,6 @@ import passport from "passport";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import methodOverride from "method-override";
-import csurf from "csurf";
 import csrfProtection from "./middleware/csrfProtection.js";
 import storeLocals from "./middleware/storeLocals.js";
 import connectDB from "./db/connect.js";
@@ -25,13 +24,11 @@ const app = express();
 
 import connectMongoDBSession from "connect-mongodb-session";
 const MongoDBStore = connectMongoDBSession(session);
-
 const url = process.env.MONGO_URI;
 const store = new MongoDBStore({
   uri: url,
   collection: "mySessions",
 });
-
 // Log any errors that occur with the store
 store.on("error", function (error) {
   console.log(error);
@@ -81,22 +78,15 @@ app.use((req, res, next) => {
 
 app.use(storeLocals);
 app.use("/jobs", jobRouter);
+app.use("/job", jobRouter);
 app.use("/sessions", sessionRoutes);
-
 app.get("/", csrfProtection, (req, res) => {
   res.render("index", { csrfToken: req.csrfToken() });
 });
-
-app.get("/edit", csrfProtection, (req, res) => {
-  res.render("edit", { csrfToken: req.csrfToken() });
-});
-
 app.use("/secretWord", auth, secretWordRouter);
-
 app.use((req, res) => {
   res.status(404).send(`That page (${req.url}) was not found.`);
 });
-
 app.use((err, req, res, next) => {
   res.status(500).send(err.message);
   console.log(err);
