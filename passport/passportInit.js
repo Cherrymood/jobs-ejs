@@ -4,42 +4,49 @@ import User from "../models/User.js";
 
 export default function passportInit() {
   passport.use(
-    "local",
     new LocalStrategy(
       { usernameField: "email", passwordField: "password" },
       async (email, password, done) => {
         try {
-          const user = await User.findOne({ email: email });
+          // Find user by email
+          const user = await User.findOne({ email });
           if (!user) {
-            return done(null, false, { message: "Incorrect credentials." });
+            console.warn(`Login failed: User not found for email ${email}`);
+            return done(null, false, { message: "Invalid email or password." });
           }
 
-          const result = await user.comparePassword(password);
-          if (result) {
-            return done(null, user);
-          } else {
-            return done(null, false, { message: "Incorrect credentials." });
+          // Validate password
+          const isMatch = await user.comparePassword(password);
+          if (!isMatch) {
+            console.warn(`Login failed: Incorrect password for ${email}`);
+            return done(null, false, { message: "Invalid email or password." });
           }
-        } catch (e) {
-          return done(e);
+
+          // Successful authentication
+          return done(null, user);
+        } catch (error) {
+          console.error("Authentication error:", error);
+          return done(error);
         }
       }
     )
   );
 
-  passport.serializeUser(async function (user, done) {
+  passport.serializeUser((user, done) => {
     done(null, user.id);
   });
 
-  passport.deserializeUser(async function (id, done) {
+  passport.deserializeUser(async (id, done) => {
     try {
       const user = await User.findById(id);
       if (!user) {
-        return done(new Error("user not found"));
+        console.error(`Deserialization failed: No user found with ID ${id}`);
+        return done(new Error("User not found"));
       }
       return done(null, user);
-    } catch (e) {
-      done(e);
+    } catch (error) {
+      console.error("Deserialization error:", error);
+      return done(error);
     }
   });
 }

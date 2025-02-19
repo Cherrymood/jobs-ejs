@@ -1,14 +1,15 @@
 export default function storeLocals(req, res, next) {
-  console.log("Session Data:", req.session); // Debugging log
-
-  if (req.session?.passport?.user) {
-    res.locals.user = req.session.passport.user; // Store user ID in locals
-  } else {
-    res.locals.user = null;
+  // Debugging log (only for development)
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Session Data:", JSON.stringify(req.session, null, 2));
   }
 
-  res.locals.info = req.flash("info");
-  res.locals.errors = req.flash("error");
+  // Store user in locals if authenticated
+  res.locals.user = req.session?.passport?.user || null;
+
+  // Ensure flash messages are always arrays to prevent errors
+  res.locals.info = req.flash("info") || [];
+  res.locals.errors = req.flash("error") || [];
 
   next();
 }

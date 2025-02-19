@@ -1,49 +1,41 @@
 import User from "../models/User.js";
-import parseValidationErrors from "../utils/parseValidationErrs.js";
+import parseVErr from "../utils/parseValidationErrors.js";
 
-function registerShow(req, res) {
+export function registerShow(req, res) {
   res.render("register");
 }
 
-async function registerDo(req, res, next) {
-  if (req.body.password !== req.body.password1) {
-    req.flash("error", "The passwords entered do not match.");
-    return res.render("register", { errors: req.flash("error") });
-  }
+export function logonShow(req, res) {
+  return req.user ? res.redirect("/") : res.render("logon");
+}
 
+export async function registerDo(req, res) {
   try {
+    if (req.body.password !== req.body.password1) {
+      throw new Error("The passwords do not match.");
+    }
     await User.create(req.body);
+    res.redirect("/");
   } catch (e) {
     if (e.constructor.name === "ValidationError") {
-      parseValidationErrors(e, req);
+      parseVErr(e, req);
     } else if (e.name === "MongoServerError" && e.code === 11000) {
       req.flash("error", "That email address is already registered.");
     } else {
-      return next(e);
+      req.flash("error", e.message);
     }
-    return res.render("register", { errors: req.flash("error") });
-  }
-
-  res.redirect("/");
-}
-
-const logoff = (req, res, next) => {
-  req.logout((err) => {
-    if (err) return next(err);
-    req.session.destroy((err) => {
-      if (err) {
-        console.log(err);
-      }
-      res.redirect("/");
+    res.render("register", {
+      errors: req.flash("error"),
+      csrfToken: req.csrfToken(),
     });
-  });
-};
-
-function logonShow(req, res) {
-  if (req.user) {
-    return res.redirect("/");
   }
-  res.render("logon");
 }
 
-export { registerShow, registerDo, logoff, logonShow };
+export function logoff(req, res) {
+  req.session.destroy(function (err) {
+    if (err) {
+      console.log(err);
+    }
+    res.redirect("/");
+  });
+}
